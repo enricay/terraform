@@ -1,0 +1,195 @@
+Terraform Workflow
+
+
+- AWS IAM USER with priviledges to create the resources you want.
+
+- Install Terraform
+
+
+
+
+--------COMPONENTS
+
+
+ - Providers Information
+
+ 	provider name and region
+
+
+ - Resources and Given name
+
+ 	eg aws_instance, loadbalancers etc
+
+ 	The given Name is the identifier you can use to refer to the resources throughout your terraform code.
+
+ 	resource "<Provider>_<ResourceType>" "<Name>" {
+ 		key  = "Pair"
+ 	}
+
+ 	resource "aws_instance" "myInstance" {
+ 		ami           = "ami-09494if9fiff88"
+ 		instance_type = "t2.micro"
+ 	}
+
+
+
+
+resource "aws_security_group" "ex-instance-SG" {
+	name = ex-instance
+
+	ingress{
+
+  	from_port         = 8080
+  	to_port           = 8080
+  	protocol          = "tcp"
+  	cidr_blocks       = ["0.0.0.0/0"]
+	}
+}
+
+
+---------TERRAFORM Expression
+
+	- An expression in Terraform is anything that returns a value. You’ve already seen the simplest type of expressions, literals, such as strings (e.g.,ami-09494if9fiff88) and numbers (e.g., 5 )
+
+
+		Types Of Expression
+
+
+		------ Reference: allows you to access values from other parts of your code.
+
+			"<Provider>_<ResourceType>"."<Name>".<"ATRIBUTE"
+
+				Attribute is one of the argument exported from another resource in another part of your code that is being referenced.
+
+
+				eg aws_security_group.ex-instance-SG.id
+
+
+					resource "aws_instance" "myInstance" {
+				 		ami           			= "ami-09494if9fiff88"
+				 		instance_type 			= "t2.micro"
+				 		vpc_security_group_ids	= [aws_security_group.ex-instance-SG.id]
+				 	}
+
+
+	When you add a reference from one resource to another, you create an implicit dependency.
+
+
+
+	Terraform understands that before it creates the EC2 instance, it needs to create the SG first
+
+	To get terraform dependency graph, $ terraform graph.
+
+
+
+
+		-------- Variable Reference: To use the value from an input variable in your Terraform code, you can use a new type of expression called a variable reference, which has the following syntax:
+
+		 	var.<Variable_name>
+
+eg 
+
+
+In your variable.tf file, set variable for the server port than can be reused in your SG resource
+
+	variable "server_port"{
+		description   = "Port for hhtp request"
+		type 	      = number
+		default		  = 8080
+	}
+
+
+
+
+				resource "aws_security_group" "ex-instance-SG" {
+					name = ex-instance
+
+					ingress{
+
+				  	from_port         = var.server_port
+				  	to_port           = var.server_port
+				  	protocol          = "tcp"
+				  	cidr_blocks       = ["0.0.0.0/0"]
+					}
+				}
+
+
+
+		-------- Interpolation Expression
+
+
+		To use a reference inside of a string literal, you need to use a new type of expression called an interpolation, which has the following syntax:
+
+		 ${...} 
+
+
+		 eg To use a variable inside a string, ${var.server_port}
+
+
+
+
+ 			DEFAULT VALUE AND INPUT VALUE AND OUTPUT VARIABLE
+
+
+				If you set a variable that can be reused somehwere else in your code, you can set the default value  and if the value is not set, Terraform will prompt you to input the Value when you run this command  $terraform apply
+
+
+				To set output variable, we use 
+
+
+					output "<name>" {
+						value = <value>
+						[config ...]
+					}
+
+
+					Sensitivity: if you don't want terraform to log out the value of an argument, set sensivity to true
+
+
+					eg For example, instead of having to manually poke around the EC2 console to find the IP address of your server, you can provide the IP address as an output variable:
+
+
+							output "public_ip" {
+							  value       = aws_instance.example.public_ip
+							  description = "The public IP address of the web server"
+							}
+
+
+
+
+---------Using Lifcyle setting
+
+	Incase you reference a resource argument in another, and u make changes in the other resources, when using terraform destroy, terraform might find it hard to deleted the resource, cos there referenced resource can't be find.
+
+	The solution to this is to create befroe destroy
+
+
+lifecycle {
+    create_before_destroy = true
+  }
+
+
+
+
+  --------- Data Source
+
+
+		  A data source represents a piece of read-only information that is fetched from the provider (in this case, AWS) every time you run Terraform. Adding a data source to your Terraform configurations does not create anything new; it’s just a way to query the provider’s APIs for data and to make that data available to the rest of your Terraform code. Each Terraform provider exposes a variety of data sources. For example, the AWS provider includes data sources to look up VPC data, subnet data, AMI IDs, IP address ranges, the current user’s identity, and much more.
+
+
+data "aws_vpc" "default"{
+	default = true
+}
+
+
+			To get the data out of a data source, you use the following attribute reference syntax:
+
+data.aws_vpc.default.id
+
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}

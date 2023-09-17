@@ -76,3 +76,5 @@ resource "aws_security_group" "instance" {
 # You can even get Terraform to show you the dependency graph by running the command:
 
 # terraform graph
+
+# When Terraform walks your dependency tree, it creates as many resources in parallel as it can, which means that it can apply your changes fairly efficiently. That’s the beauty of a declarative language: you just specify what you want and Terraform determines the most efficient way to make it happen.

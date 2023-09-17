@@ -30,3 +30,9 @@ resource "aws_instance" "example" {
 
 # TAGS
 # We can add tags to the resources to add more metadata
+
+# GITIGNORE
+
+# .terraform 
+# *.tfstate
+# *.tfstate.backup

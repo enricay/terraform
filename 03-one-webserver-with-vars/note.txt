@@ -1,0 +1,60 @@
+In order not to repeat our code in several places eg like defining our port 8080
+in several places (in the user data and in the SG), we can define our variable for the server port.
+To allow our code more DRY (Don’t Repeat Yourself)
+Body of variable contains; Description, default,type constraint
+
+variable "name" {
+    config{arguments}
+}
+
+eg;
+
+variable "number_example" {
+    type        = number
+    description = "(optional) describe your variable"
+    default     = 88
+}
+
+
+DECLARE VARIABLE
+variable "server_port" {
+    type        = number
+    description = "The port the server will use for the HTTP request"
+    default     = 8080
+}
+
+
+CONSUME VARIABLE
+var.<VARIABLE_NAME>
+
+Note that the input variable has no , so if you run the command now, Terraform will interactively prompt you to enter a
+value for and show you the of the variable:
+
+$ terraform apply will prompt you to input the value for your port number
+
+If you don’t want to deal with an interactive prompt, you can provide a value for the variable via the
+$ terraform plan -var "server_port=8080"
+
+You could also set the variable via an environment variable named;
+$ export TF_VAR_server_port=8080
+$ terraform plan
+
+
+
+It’s also a good idea to use the same variable when setting the port in the User Data script.
+To use a reference inside of a string literal, you need to use a new type of expression called 
+an interpolation, which has the following syntax:
+
+${...}
+eg<<-EOF
+                                #!/bin/bash
+                                echo "Hello, World" > index.html
+                                nohup busybox httpd -f -p ${var.server_port} &
+                                EOF
+OUTPUT 
+Terraform also allows you to define output variables by using the following syntax:
+
+output "Name"{
+    value = <value>
+    config
+}
