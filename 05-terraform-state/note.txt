@@ -1,0 +1,113 @@
+In this chapter, you’re going to see how Terraform tracks the state of your infrastructure and 
+the impact that has on file layout, isolation, and locking in a Terraform project
+
+Terraform was able to find the resources it created previously and update them accordingly. 
+But how did Terraform know which resources it was supposed to manage? 
+
+TERRAFORM TFstate
+
+Every time you run Terraform, it records information about what infrastructure it created 
+in a Terraform state file. By default, when you run Terraform in the folder /foo/bar, 
+Terraform creates the file /foo/bar/terraform.tfstate. This file contains a custom JSON format
+ that records a mapping from the Terraform resources in your configuration files to the 
+ representation of those resources in the real world. For example, let’s say your Terraform 
+ configuration contained the following:
+
+ Every time you run Terraform, it can fetch the latest status of this EC2 Instance from 
+ AWS and compare that to what’s in your Terraform configurations to determine what changes
+need to be applied.
+
+
+LOCAL TFstate
+If you’re using Terraform for a personal project, storing state in a single terraform.tfstate file that lives locally on your computer works just fine. But if you want to use Terraform as a team on a real product, you run into several problems:
+
+SHARED STORAGE
+To be able to use Terraform to update your infrastructure, each of your team members needs access to the same Terraform state files. That means you need to store those files in a shared location
+
+LOCKING STATE FILE
+
+As soon as data is shared, you run into a new problem: locking. Without locking, if two team members are running Terraform at the same time, you can run into race conditions as multiple Terraform processes make concurrent updates to the state files, leading to conflicts, data loss, and state file corruption.
+
+STATE FILE ISOLATION
+When making changes to your infrastructure, it’s a best practice to isolate different environments. For example, when making a change in a testing or staging environment, you want to be sure that there is no way you can accidentally break production. But how can you isolate your changes if all of your infrastructure is defined in the same Terraform state file?
+
+
+- use version control to store code. storing statefile in VCS is a bad idea
+Manual error
+It’s too easy to forget to pull down the latest changes from version control before running Terraform or to push your latest changes to version control after running Terraform. It’s just a matter of time before someone on your team runs Terraform with out-of-date state files and as a result, accidentally rolls back or duplicates previous deployments.
+
+Locking
+Most version control systems do not provide any form of locking that would prevent two team members from running on the same state file at the same time.
+
+Secrets
+All data in Terraform state files is stored in plain text. This is a problem because certain Terraform resources need to store sensitive data. For example, if you use the resource to create a database, Terraform will store the username and password for the database in a state file in plain text.
+
+- Use Remote Backend
+    * Local backend
+    * Remote backends
+        -Amazon S3; Azure Storage; Google Cloud Storage; and HashiCorp’s Terraform Cloud, Terraform Pro, and Terraform Enterprise.
+
+Remote backends solve all three of the issues just listed:
+
+Manual error
+After you configure a remote backend, Terraform will automatically load the state file from that backend every time you run plan or apply and it’ll automatically store the state file in that backend after each apply, so there’s no chance of manual error.
+
+Locking
+Most of the remote backends natively support locking.
+
+Secrets
+Most of the remote backends natively support encryption in transit and encryption at rest of the state file. Moreover, those backends usually expose ways to configure access permissions (e.g., using IAM policies with an Amazon S3 bucket), so you can control who has access to your state files and the secrets they might contain. 
+
+
+USE S3 FOR Backend Statefile Management
+    - It supports encryption, which reduces worries about storing sensitive data in state files. Anyone on your team who has access to that S3 bucket will be able to see the state files in an unencrypted form, so this is still a partial solution, but at least the data will be encrypted at rest (Amazon S3 supports server-side encryption using AES-256) and in transit (Terraform uses SSL to read and write data in Amazon S3).
+    - It supports locking via DynamoDB. (More on this later.)
+    - It supports versioning, so every revision of your state file is stored, and you can roll back to an older version if something goes wrong.
+    - It’s inexpensive, with most Terraform usage easily fitting into the free tier.2
+
+
+Backend S3 configuration
+    -    bucket
+    -   prevent_destroy = true [lifecycle setting]
+        This is a good way to prevent accidental deletion of an important resource, such as this S3 bucket, which will store all of your Terraform state.
+    -   Versioning
+    -   Server side encryption
+    - create DynamoDB
+         
+         
+   USE BYNAMO DB FOR LOCKING      
+        DynamoDB is Amazon’s distributed key–value store. Not expensive. Managed by AWS.
+
+        To use DynamoDB for locking with Terraform, you must create a DynamoDB table that has a primary key called (with this exact spelling and capitalization). You can create such a table using the aws_dynamodb_table resource.
+
+terraform{
+  backend "s3" {
+
+    # This backend configuration is filled in automatically at test time by Terratest. If you wish to run this example
+    # manually, uncomment and fill in the config below.
+
+    # bucket         = "<YOUR S3 BUCKET>"
+    # key            = "<SOME PATH>/terraform.tfstate"
+    # region         = "us-east-2"
+    # dynamodb_table = "<YOUR DYNAMODB TABLE>"
+    # encrypt        = true
+
+  }
+}
+
+After everything is deployed, you will have an S3 bucket and DynamoDB table, but your Terraform state will still be stored locally. To configure Terraform to store the state in your S3 bucket (with encryption and locking), you need to add a
+configuration to your Terraform code. This is configuration for Terraform itself, so it resides within a block, and has the following syntax:
+
+
+Limitations with Terraform’s Backends
+
+The first limitation is the chicken-and-egg situation of using Terraform to create the S3 bucket where you want to store your Terraform state
+
+Write Terraform code to create the S3 bucket and DynamoDB table and deploy that code with a local backend.
+2. Go back to the Terraform code, add a remote
+configuration to it to use the newly created S3 bucket and DynamoDB table, and run to copy your local state to S3.
+
+
+The second limitation is more painful: the block in Terraform does not allow you to use any variables or references.
+
+This means that you need to manually copy and paste the S3 bucket name, region, DynamoDB table name, etc. into every one of your Terraform modules

@@ -1,0 +1,64 @@
+Running a single server is a good start, but in the real world, a single server is a single point of failure.
+If that server crashes, or if it becomes overloaded from too much traffic, users will be unable to access your site.
+The solution is to run a cluster of servers, routing around servers that go down, and adjusting the size of 
+the cluster up or down based on traffic.
+Managing such a cluster manually is a lot of work. Fortunately, you can let AWS take care of it for by you
+ using an Auto Scaling Group (ASG), as shown in Figure 2-9. An ASG takes care of a lot of tasks for you 
+ completely automatically, including launching a cluster of EC2 Instances, monitoring the health of each Instance, 
+ replacing failed Instances, and adjusting the size of the cluster in response to load.
+
+ CREATING ASG
+
+ - Launch configuration
+ - ASG
+
+
+ Note that the ASG uses a reference to fill in the launch configuration name. This leads to a problem: 
+ launch configurations are immutable, so if you change any parameter of your launch configuration, 
+ Terraform will try to replace it. Normally, when replacing a resource, Terraform deletes the 
+ old resource first and then creates its replacement, but because your ASG now has a reference to 
+ the old resource, Terraform won’t be able to delete it.
+
+ Lifecyle setting
+ create_before_destroy = true
+
+
+
+ USING DATA
+
+ A data source represents a piece of read-only information that is fetched from the provider 
+ (in this case, AWS) every time you run Terraform. Adding a data source to your Terraform configurations 
+ does not create anything new; it’s just a way to query the provider’s APIs for data and to make that 
+ data available to the rest of your Terraform code. Each Terraform provider exposes a variety of data sources.
+  For example, the AWS provider includes data sources to look up VPC data, subnet data, AMI IDs, IP
+  address ranges, the current user’s identity, and much more.
+
+  data "provider.type" "name"{
+    [config]
+  }
+
+Here, is the name of a provider (e.g., ),TYPE is the type of data source you want to use (e.g.,vpc ), 
+NAME is an identifier you can use throughout the Terraform code to refer to this data source, and
+CONFIG consists of one or more arguments that are specific to that data source.
+
+eg data "aws_vpc" "default"{
+    default = true
+}
+
+To consume or reference the data. For example, to get the ID of the VPC from the aws_vpc data source, 
+you would use the following:
+vpc_id = data.aws_vpc.default.ID
+
+
+
+LOAD BALANCER
+
+Deploying a Load Balancer
+At this point, you can deploy your ASG, but you’ll have a small problem: you now have multiple servers, 
+each with its own IP address, but you typically want to give of your end users only a single IP to use. 
+One way to solve this problem is to deploy a load balancer to distribute traffic across your servers and 
+to give all your users the IP (actually, the DNS name) of the load balancer. Creating a load balancer 
+that is highly available and scalable is a lot of work. Once again, you can let AWS take care of it for you, 
+this time by using Amazon’s Elastic Load Balancer (ELB) service, as shown in Figure 2-10.
+
+

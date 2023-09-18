@@ -35,7 +35,7 @@ $ terraform apply will prompt you to input the value for your port number
 If you don’t want to deal with an interactive prompt, you can provide a value for the variable via the
 $ terraform plan -var "server_port=8080"
 
-You could also set the variable via an environment variable named;
+You could also set the variable via an environment variable named; TF_VAR_<name>, where <name> is the name of the var your are trying to set:
 $ export TF_VAR_server_port=8080
 $ terraform plan
 
