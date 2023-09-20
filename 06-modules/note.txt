@@ -1,0 +1,6 @@
+How do you add this production environment without having to copy and paste all of the code from staging? For example, how do you avoid having to copy and paste all the code in stage/services/webserver-cluster into prod/services/webserver-cluster and all the code in stage/data-stores/mysql into prod/data-stores/mysql?
+
+In a general-purpose programming language such as Ruby, if you had the same code copied and pasted in several places, you could put that code inside of a function and reuse that function everywhere:
+
+
+With Terraform, you can put your code inside of a Terraform module and reuse that module in multiple places throughout your code.

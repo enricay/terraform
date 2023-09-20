@@ -1,0 +1,16 @@
+There are different ways to pass data in AWS
+
+Data
+
+
+Remote statet file
+
+    eg If yo are trying to use values from a resource that is stored in another terraform folder/project, you can use output the arguments in the output.tf file which then stores the argument value in the state file.
+    The state file can then be refenced in another terraform project/folder.
+
+user_data = templatefile("user-data.sh", {
+    server_port = var.server_port
+    db_address  = data.terraform_remote_state.db.outputs.address
+    db_port     = data.terraform_remote_state.db.outputs.port
+  })
+  
