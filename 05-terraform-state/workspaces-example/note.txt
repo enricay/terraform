@@ -1,0 +1,19 @@
+Isolation via Workspaces
+Terraform workspaces allow you to store your Terraform state in multiple, separate, named workspaces. Terraform starts with a single workspace called “default,” and if you never explicitly specify a workspace, the default workspace is the one you’ll use the entire time. To create a new workspace or switch between workspaces, you use the
+commands. Let’s experiment with workspaces on some Terraform code that deploys a single EC2 Instance:
+
+
+
+TERRAFORM Workspaces
+
+
+Normally terraform create resources in the default namespace
+        $terraform workspace show.
+To create and view new workspace 
+        $terraform workspace new example1
+
+List the workspaces
+        $terraform workspace list 
+
+Switch between workspace
+        $terraform workspace selectworkspace_name

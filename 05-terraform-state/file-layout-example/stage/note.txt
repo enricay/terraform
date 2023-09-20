@@ -1,0 +1,9 @@
+Terraform Remote State Data Source
+
+
+You can use this data source to fetch the Terraform state file stored by another set of Terraform configurations in a completely read-only manner.
+
+
+Let’s go through an example. Imagine that your web server cluster needs to communicate with a MySQL database. Running a database that is scalable, secure, durable, and highly available is a lot of work. Again, you can let AWS take care of it for you, this time by using Amazon’s Relational Database Service (RDS)
+
+You might not want to define the MySQL database in the same set of configuration files as the web server cluster, because you’ll be deploying updates to the web server cluster far more frequently and don’t want to risk accidentally breaking the database each time you do so
