@@ -4,3 +4,53 @@ In a general-purpose programming language such as Ruby, if you had the same code
 
 
 With Terraform, you can put your code inside of a Terraform module and reuse that module in multiple places throughout your code.
+
+
+Module Basics
+A Terraform module is very simple: any set of Terraform configuration files in a folder is a module. All of the configurations you’ve written so far have technically been modules, although not particularly interesting ones, since you deployed them directly (the module in the current working directory is called the root module).
+
+
+Before you run the command on this code, be aware that there is a problem with the module: all of the names are hardcoded. That is, the name of the security groups, ALB, and other resources are all hardcoded, so if you use this module more than once, you’ll get name conflict errors.
+
+Module Inputs
+To make a function configurable in a general-purpose programming language such as Ruby, you can add input parameters to that function:
+
+
+MOdule Locals
+
+ You could extract values into input variables, but then users of your module will be able to (accidentally) override these values, which you might not want. Instead of using input variables, you can define these as local values in a block
+
+ Module Outputs
+A powerful feature of ASGs is that you can configure them to increase or decrease the number of servers you have running in response to load. One way to do this is to use a scheduled action, which can change the size of the cluster at a scheduled time during the day. For example, if traffic to your cluster is much higher during normal business hours, you can use a scheduled action to increase the number of servers at 9 a.m. and decrease it at 5 p.m.
+
+
+Module Gotchas
+When creating modules, watch out for these gotchas: 
+
+    File paths:
+
+    By default, Terraform interprets the path relative to the current working directory. That works if you’re using the function in a Terraform configuration file that’s in the same directory as where you’re running 'Terraform apply' (that is, if you’re using the function in the root module), but that won’t work when you’re using in a module that’s defined in a separate folder.
+    
+    To solve this issue, you can use an expression known as a path reference, which is of the form . Terraform supports the following types of path references:
+
+        Path.module
+            Returns the filesystem path of the module where the expression is defined.
+
+        path.root
+            Returns the filesystem path of the root module.
+
+        path.cwd
+            Returns the filesystem path of the current working directory. In normal use of Terraform this is the same as , but some advanced uses of Terraform run it from a directory other than the root module directory, causing these paths to be different.
+    
+    Inline blocks:
+
+    The configuration for some Terraform resources can be defined either as inline blocks or as separate resources. When creating a module, you should always prefer using a separate resource.
+
+
+    If you try to use a mix of both inline blocks and separate resources, you will get errors where routing rules conflict and overwrite one another. 
+
+    when creating a module, you should always try to use a separate resource instead of the inline block. Otherwise, your module will be less flexible and configurable
+
+
+Module Versioning
+If both your staging and production environment are pointing to the same module folder, as soon as you make a change in that folder, it will affect both environments on the very next deployment. This sort of coupling makes it more difficult to test a change in staging without any chance of affecting production. A better approach is to create versioned modules so that you can use one version in staging (e.g., v0.0.2) and a different version in production (e.g., v0.0.1),
